@@ -1,15 +1,14 @@
-package com.example.HM.Member.Service;
+package com.example.HM.Domain.Member.Service;
 
-import com.example.HM.Member.DTO.MemberDTO;
-import com.example.HM.Member.Entity.MemberEntity;
-import com.example.HM.Member.Repository.MemberRepository;
+import com.example.HM.Domain.Member.DTO.MemberDTO;
+import com.example.HM.Domain.Member.Entity.MemberEntity;
+import com.example.HM.Domain.Member.Repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor

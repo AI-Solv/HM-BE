@@ -1,7 +1,7 @@
 package com.example.HM;
 
-import com.example.HM.Member.DTO.MemberDTO;
-import com.example.HM.Member.Service.MemberService;
+import com.example.HM.Domain.Member.DTO.MemberDTO;
+import com.example.HM.Domain.Member.Service.MemberService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

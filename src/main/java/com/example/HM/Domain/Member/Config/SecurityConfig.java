@@ -1,4 +1,4 @@
-package com.example.HM.Member.Config;
+package com.example.HM.Domain.Member.Config;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;

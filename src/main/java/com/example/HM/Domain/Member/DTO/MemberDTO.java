@@ -1,6 +1,6 @@
-package com.example.HM.Member.DTO;
+package com.example.HM.Domain.Member.DTO;
 
-import com.example.HM.Member.Entity.MemberEntity;
+import com.example.HM.Domain.Member.Entity.MemberEntity;
 import lombok.*;
 
 @Getter

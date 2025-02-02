@@ -1,7 +1,7 @@
-package com.example.HM.Member.Controller;
+package com.example.HM.Domain.Member.Controller;
 
-import com.example.HM.Member.DTO.MemberDTO;
-import com.example.HM.Member.Service.MemberService;
+import com.example.HM.Domain.Member.DTO.MemberDTO;
+import com.example.HM.Domain.Member.Service.MemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

@@ -1,6 +1,6 @@
-package com.example.HM.Member.Entity;
+package com.example.HM.Domain.Member.Entity;
 
-import com.example.HM.Member.DTO.MemberDTO;
+import com.example.HM.Domain.Member.DTO.MemberDTO;
 import jakarta.persistence.*;
 import lombok.*;
 
