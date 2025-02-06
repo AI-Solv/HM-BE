@@ -63,7 +63,10 @@ public class MemberController {
 
     // 로그인 처리
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestParam String email, @RequestParam String password) {
+    public ResponseEntity<String> login(@RequestBody Map<String, String> loginData) {
+        String email = loginData.get("email");
+        String password = loginData.get("password");
+
         boolean isAuthenticated = memberService.login(email, password);
         return isAuthenticated ? ResponseEntity.ok("로그인 성공")
                 : ResponseEntity.badRequest().body("이메일 또는 비밀번호가 올바르지 않습니다.");
