@@ -51,7 +51,7 @@
       margin-bottom: 15px;
       border: 1px solid #ccc;
     }
-    .btn-check-email, .btn-signup {
+    .btn-check-email, .btn-send-code, .btn-signup {
       background-color: #6c5ce7;
       color: white;
       border: none;
@@ -59,14 +59,14 @@
       padding: 10px 20px;
       margin-top: 10px;
     }
-    .btn-check-email:hover, .btn-signup:hover {
+    .btn-check-email:hover, .btn-send-code:hover, .btn-signup:hover {
       background-color: #5a4dbf;
     }
     .btn-signup:disabled {
       background-color: #dcd6f7;
       color: #aaa;
     }
-    #emailFeedback, #passwordFeedback {
+    #emailFeedback, #passwordFeedback, #codeFeedback {
       font-size: 14px;
       margin-top: 5px;
     }
@@ -82,9 +82,15 @@
       <label for="email" class="form-label">아이디(이메일)</label>
       <div class="d-flex">
         <input type="email" class="form-control me-2" id="email" placeholder="xxxxx@" required>
-        <button type="button" class="btn btn-check-email" onclick="checkEmail()">중복 확인</button>
+        <button type="button" class="btn btn-check-email" onclick="sendEmailCode()">인증번호 전송</button>
       </div>
       <div id="emailFeedback"></div>
+    </div>
+    <div class="mb-3">
+      <label for="code" class="form-label">인증번호 입력</label>
+      <input type="text" class="form-control" id="code" placeholder="인증번호 입력" required>
+      <button type="button" class="btn btn-send-code" onclick="verifyCode()">인증 확인</button>
+      <div id="codeFeedback"></div>
     </div>
     <div class="mb-3">
       <label for="password" class="form-label">비밀번호</label>
@@ -100,19 +106,28 @@
 </div>
 
 <script>
-  function checkEmail() {
+  function sendEmailCode() {
     const email = document.getElementById('email').value;
-    fetch(`/member/check-email?email=${email}`)
-            .then(response => response.text().then(message => ({ response, message })))
-            .then(({ response, message }) => {
-              const feedback = document.getElementById('emailFeedback');
+    fetch(`/member/send-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    }).then(response => response.text().then(message => {
+      document.getElementById('emailFeedback').innerText = message;
+      document.getElementById('emailFeedback').style.color = response.ok ? 'green' : 'red';
+    }));
+  }
+
+  function verifyCode() {
+    const email = document.getElementById('email').value;
+    const code = document.getElementById('code').value;
+    fetch(`/member/verify-code?email=${email}&code=${code}`)
+            .then(response => response.text().then(message => {
+              const feedback = document.getElementById('codeFeedback');
               feedback.innerText = message;
               feedback.style.color = response.ok ? 'green' : 'red';
               enableSubmit();
-            })
-            .catch(error => {
-              console.error('Error checking email:', error);
-            });
+            }));
   }
 
   document.getElementById('confirmPassword').addEventListener('input', () => {
@@ -131,25 +146,10 @@
   });
 
   function enableSubmit() {
-    const emailFeedback = document.getElementById('emailFeedback').style.color === 'green';
-    const passwordFeedback = document.getElementById('passwordFeedback').style.color === 'green';
-    document.querySelector('.btn-signup').disabled = !(emailFeedback && passwordFeedback);
+    const codeVerified = document.getElementById('codeFeedback').style.color === 'green';
+    const passwordMatch = document.getElementById('passwordFeedback').style.color === 'green';
+    document.querySelector('.btn-signup').disabled = !(codeVerified && passwordMatch);
   }
-
-  document.getElementById('signupForm').onsubmit = (e) => {
-    e.preventDefault();
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-
-    fetch('/member/save', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    }).then(response => {
-      if (response.ok) alert('회원가입 완료!');
-      else alert('회원가입 실패');
-    });
-  };
 </script>
 </body>
 </html>
