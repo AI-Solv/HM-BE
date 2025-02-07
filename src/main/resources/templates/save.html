@@ -101,7 +101,7 @@
       <input type="password" class="form-control" id="confirmPassword" placeholder="위의 비밀번호를 다시 입력해 주세요." required>
       <div id="passwordFeedback"></div>
     </div>
-    <button type="submit" class="btn btn-signup w-100" disabled>다음</button>
+    <button type="submit" class="btn btn-signup w-100" disabled>회원가입</button>
   </form>
 </div>
 
@@ -110,8 +110,8 @@
     const email = document.getElementById('email').value;
     fetch(`/member/send-email`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ email })
     }).then(response => response.text().then(message => {
       document.getElementById('emailFeedback').innerText = message;
       document.getElementById('emailFeedback').style.color = response.ok ? 'green' : 'red';
@@ -121,13 +121,16 @@
   function verifyCode() {
     const email = document.getElementById('email').value;
     const code = document.getElementById('code').value;
-    fetch(`/member/verify-code?email=${email}&code=${code}`)
-            .then(response => response.text().then(message => {
-              const feedback = document.getElementById('codeFeedback');
-              feedback.innerText = message;
-              feedback.style.color = response.ok ? 'green' : 'red';
-              enableSubmit();
-            }));
+    fetch(`/member/verify-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ email, code })
+    }).then(response => response.text().then(message => {
+      const feedback = document.getElementById('codeFeedback');
+      feedback.innerText = message;
+      feedback.style.color = response.ok ? 'green' : 'red';
+      enableSubmit();
+    }));
   }
 
   document.getElementById('confirmPassword').addEventListener('input', () => {
@@ -150,6 +153,25 @@
     const passwordMatch = document.getElementById('passwordFeedback').style.color === 'green';
     document.querySelector('.btn-signup').disabled = !(codeVerified && passwordMatch);
   }
+
+  document.getElementById('signupForm').onsubmit = (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+
+    fetch('/member/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    }).then(response => response.text().then(message => {
+      if (response.ok) {
+        alert('회원가입 완료!');
+        window.location.href = "/member/login";
+      } else {
+        alert('회원가입 실패: ' + message);
+      }
+    }));
+  };
 </script>
 </body>
 </html>
