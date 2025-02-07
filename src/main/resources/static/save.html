@@ -1,89 +1,150 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>회원가입</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      font-family: 'Arial', sans-serif;
+    }
+    .container {
+      text-align: left;
+      background-color: #ffffff;
+      padding: 40px;
+      border-radius: 15px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+    h2 {
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 10px;
+    }
+    h4 {
+      font-size: 16px;
+      color: #6c5ce7;
+      margin-bottom: 20px;
+    }
+    .progress-bar {
+      background-color: #dcd6f7;
+      height: 5px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+    .form-label {
+      font-weight: bold;
+      color: #555;
+    }
+    .form-control {
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+    }
+    .btn-check-email, .btn-signup {
+      background-color: #6c5ce7;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 20px;
+      margin-top: 10px;
+    }
+    .btn-check-email:hover, .btn-signup:hover {
+      background-color: #5a4dbf;
+    }
+    .btn-signup:disabled {
+      background-color: #dcd6f7;
+      color: #aaa;
+    }
+    #emailFeedback, #passwordFeedback {
+      font-size: 14px;
+      margin-top: 5px;
+    }
+  </style>
 </head>
 <body>
-<div class="container mt-5">
-  <h2>회원가입</h2>
+<div class="container">
+  <h4>회원가입</h4>
+  <h2>이메일로 가입하기</h2>
+  <div class="progress-bar" style="width: 25%;"></div>
   <form id="signupForm">
     <div class="mb-3">
-      <label for="email" class="form-label">이메일</label>
-      <input type="email" class="form-control" id="email" placeholder="이메일 입력" required>
-      <button type="button" class="btn btn-secondary mt-2" onclick="checkEmail()">중복 확인</button>
-      <div id="emailFeedback" class="mt-2"></div>
-    </div>
-    <div class="mb-3">
-      <label for="name" class="form-label">닉네임</label>
-      <input type="text" class="form-control" id="name" placeholder="닉네임 입력" required>
+      <label for="email" class="form-label">아이디(이메일)</label>
+      <div class="d-flex">
+        <input type="email" class="form-control me-2" id="email" placeholder="xxxxx@" required>
+        <button type="button" class="btn btn-check-email" onclick="checkEmail()">중복 확인</button>
+      </div>
+      <div id="emailFeedback"></div>
     </div>
     <div class="mb-3">
       <label for="password" class="form-label">비밀번호</label>
-      <input type="password" class="form-control" id="password" placeholder="비밀번호 입력" required>
+      <input type="password" class="form-control" id="password" placeholder="영문, 숫자, 특수 문자를 사용한 8~20자" required>
     </div>
     <div class="mb-3">
       <label for="confirmPassword" class="form-label">비밀번호 확인</label>
-      <input type="password" class="form-control" id="confirmPassword" placeholder="비밀번호 재입력" required>
-      <div id="passwordFeedback" class="mt-2"></div>
+      <input type="password" class="form-control" id="confirmPassword" placeholder="위의 비밀번호를 다시 입력해 주세요." required>
+      <div id="passwordFeedback"></div>
     </div>
-
-    <button type="submit" class="btn btn-success">회원가입</button>
+    <button type="submit" class="btn btn-signup w-100" disabled>다음</button>
   </form>
 </div>
 
 <script>
-  // 이메일 중복 확인
   function checkEmail() {
     const email = document.getElementById('email').value;
     fetch(`/member/check-email?email=${email}`)
-            .then(response => response.text().then(message => ({ response, message }))) // response와 message를 함께 처리
+            .then(response => response.text().then(message => ({ response, message })))
             .then(({ response, message }) => {
               const feedback = document.getElementById('emailFeedback');
               feedback.innerText = message;
-              feedback.style.color = response.ok ? 'green' : 'red'; // response가 정의됨
+              feedback.style.color = response.ok ? 'green' : 'red';
+              enableSubmit();
             })
             .catch(error => {
               console.error('Error checking email:', error);
             });
   }
 
-
-  // 실시간 비밀번호 확인
   document.getElementById('confirmPassword').addEventListener('input', () => {
     const password = document.getElementById('password').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
     const feedback = document.getElementById('passwordFeedback');
 
-    if (password === confirmPassword) {
+    if (password === confirmPassword && password.length >= 8 && password.length <= 20) {
       feedback.innerText = '비밀번호가 일치합니다.';
       feedback.style.color = 'green';
     } else {
-      feedback.innerText = '비밀번호가 일치하지 않습니다.';
+      feedback.innerText = '비밀번호가 일치하지 않거나 길이가 맞지 않습니다.';
       feedback.style.color = 'red';
     }
+    enableSubmit();
   });
 
-  // 회원가입 요청
+  function enableSubmit() {
+    const emailFeedback = document.getElementById('emailFeedback').style.color === 'green';
+    const passwordFeedback = document.getElementById('passwordFeedback').style.color === 'green';
+    document.querySelector('.btn-signup').disabled = !(emailFeedback && passwordFeedback);
+  }
+
   document.getElementById('signupForm').onsubmit = (e) => {
     e.preventDefault();
     const email = document.getElementById('email').value;
-    const name = document.getElementById('name').value;
     const password = document.getElementById('password').value;
-    const confirmPassword = document.getElementById('confirmPassword').value;
-
-    // 비밀번호 확인
-    if (password !== confirmPassword) {
-      alert('비밀번호가 일치하지 않습니다.');
-      return;
-    }
 
     fetch('/member/save', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, name, password })
+      body: JSON.stringify({ email, password })
     }).then(response => {
       if (response.ok) alert('회원가입 완료!');
       else alert('회원가입 실패');
