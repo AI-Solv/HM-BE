@@ -10,12 +10,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-@Controller
+@Controller  // RestController 대신 Controller 사용
 @RequiredArgsConstructor
 @RequestMapping("/member")
 public class MemberController {
 
-    // 생성자 주입
     private final MemberService memberService;
 
     // 회원가입 페이지 출력 요청
@@ -24,8 +23,15 @@ public class MemberController {
         return "redirect:/save.html"; // save.html 뷰 반환
     }
 
+    // 로그인 페이지 출력 요청
+    @GetMapping("/login")
+    public String loginForm() {
+        return "redirect:/login.html"; // login.html 뷰 반환
+    }
+
     // 회원가입 처리
     @PostMapping("/save")
+    @ResponseBody
     public ResponseEntity<String> save(@RequestBody MemberDTO memberDTO) {
         try {
             memberService.save(memberDTO);
@@ -40,6 +46,7 @@ public class MemberController {
 
     // 회원가입 처리 : 이메일 중복 확인
     @GetMapping("/check-email")
+    @ResponseBody
     public ResponseEntity<String> checkEmail(@RequestParam("email") String email) {
         boolean isDuplicate = memberService.checkEmailDuplicate(email);
         if (isDuplicate) {
@@ -50,6 +57,7 @@ public class MemberController {
 
     // 회원가입 처리 : 비밀번호 일치 불일치 확인
     @PostMapping("/check-passwords")
+    @ResponseBody
     public ResponseEntity<String> checkPasswords(@RequestBody Map<String, String> passwords) {
         String password = passwords.get("password");
         String confirmPassword = passwords.get("confirmPassword");
@@ -63,6 +71,7 @@ public class MemberController {
 
     // 로그인 처리
     @PostMapping("/login")
+    @ResponseBody  // JSON 응답 반환
     public ResponseEntity<String> login(@RequestBody Map<String, String> loginData) {
         String email = loginData.get("email");
         String password = loginData.get("password");
@@ -71,5 +80,4 @@ public class MemberController {
         return isAuthenticated ? ResponseEntity.ok("로그인 성공")
                 : ResponseEntity.badRequest().body("이메일 또는 비밀번호가 올바르지 않습니다.");
     }
-
 }
