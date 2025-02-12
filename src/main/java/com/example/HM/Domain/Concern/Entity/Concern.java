@@ -17,22 +17,24 @@ public class Concern {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // ID
+    private Long id;
 
-    private String title; // 고민 제목
+    private String title; // 제목
 
     @Lob
-    private String description; // 고민 내용
+    private String description; // 내용
 
     private LocalDateTime createdAt; // 생성일
 
     private LocalDateTime deadline; // 마감일
 
-    @Enumerated(EnumType.STRING)
-    private Status status; // 상태 ( pending || solved || ai_solved )
+    private LocalDateTime remainingTime; // 마감일까지 남은 날짜 + 시간
 
     @Enumerated(EnumType.STRING)
-    private Category category; // 카테고리 (한글 매핑된 Enum)
+    private Status status; // pending || solved || ai_solved
+
+    @Enumerated(EnumType.STRING)
+    private Category category; // 유형
 
     public enum Status {
         PENDING,
@@ -56,7 +58,6 @@ public class Concern {
             return displayName;
         }
 
-        // 한글 이름으로 카테고리 Enum 찾기
         public static Category fromDisplayName(String displayName) {
             for (Category category : values()) {
                 if (category.getDisplayName().equals(displayName)) {

@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -25,14 +26,17 @@ public class ConcernService {
 
     private final AIResponseController aiController;
 
+    // 고민 조회 (all)
     public List<Concern> getAllConcerns(){
         return concernRepository.findAll();
     }
 
+    // 고민 조회 (ID)
     public Concern getConcernById(Long id) {
         return concernRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Concern not found with id: " + id));
     }
 
+    // 고민 생성
     @Transactional
     public Concern createConcern(String title, String description, LocalDateTime deadline, Concern.Category category) {
         Concern concern = Concern.builder()
@@ -46,36 +50,31 @@ public class ConcernService {
         return concernRepository.save(concern);
     }
 
-    @Transactional
-    public Concern resolveConcern(Long id, String solutionContent) {
-        Concern concern = getConcernById(id);
-        LocalDateTime now = LocalDateTime.now();
+    // 고민 삭제
+    public void deleteConcernById(Long id) {
+        Concern concern = concernRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Concern not found with id: " + id));
 
-        // 해결책 저장
-        Solution solution = Solution.builder()
-                .content(solutionContent)
-                .createdAt(now)
-                .concern(concern)
-                .build();
+        // Solution 존재하면 삭제
+        Optional<Solution> solution = solutionRepository.findByConcernId(id);
+        solution.ifPresent(solutionRepository::delete);
 
-        solutionRepository.save(solution);
+        // AIResponse 존재하면 삭제
+        Optional<AIResponse> aiResponse = aiResponseRepository.findByConcernId(id);
+        aiResponse.ifPresent(aiResponseRepository::delete);
 
-        if (now.isBefore(concern.getDeadline())) {
-            // 마감일 이전에 해결
-            concern.setStatus(Concern.Status.SOLVED);
-        } else {
-            // 마감일 이후에 해결
-            String aiSolutionContent = aiController.chat(concern.getDescription());
-            AIResponse aiResponse = AIResponse.builder()
-                    .content(aiSolutionContent)
-                    .createdAt(now)
-                    .concern(concern)
-                    .build();
+        // 고민 삭제
+        concernRepository.delete(concern);
+    }
 
-            aiResponseRepository.save(aiResponse);
-            concern.setStatus(Concern.Status.AI_SOLVED);
-        }
+    // 고민 해답 수정
+    public void modifyConcernSolution(Long id, String solutionContent) {
+        Concern concern = concernRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Concern not found with id: " + id));
 
-        return concernRepository.save(concern);
+        // Solution contet 수정
+        Optional<Solution> solution = solutionRepository.findByConcernId(id);
+        solution.ifPresent(s -> {
+            s.setContent(solutionContent);  // Solution의 content 수정
+            solutionRepository.save(s);  // 저장
+        });
     }
 }
