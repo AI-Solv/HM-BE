@@ -8,6 +8,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.mail.MailException;
+import org.springframework.mail.MailAuthenticationException;
+import org.springframework.mail.MailSendException;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+
 
 import java.util.Map;
 
@@ -77,27 +83,46 @@ public class MemberController {
                 : ResponseEntity.badRequest().body("🚫 이메일 또는 비밀번호가 올바르지 않습니다.");
     }
 
-    // 🔹 이메일 인증번호 전송 (네이버/Gmail 지원)
     @PostMapping("/send-email")
     public ResponseEntity<String> sendEmail(@RequestParam("email") String email) {
         try {
-            // 이메일 형식 확인 (간단한 검증)
+            // 1️⃣ 이메일 형식 검증
             if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
                 log.warn("🚫 잘못된 이메일 형식 입력: {}", email);
                 return ResponseEntity.badRequest().body("잘못된 이메일 형식입니다. 올바른 이메일을 입력해주세요.");
             }
 
-            // 이메일 전송 시도
+            // 2️⃣ 이메일 전송 시도
             memberService.sendEmailVerificationCode(email);
             return ResponseEntity.ok("📩 인증번호가 이메일로 전송되었습니다.");
 
         } catch (IllegalArgumentException e) {
             log.warn("🚫 이메일 인증 요청 실패 - 사유: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body("이메일 인증 요청 실패: " + e.getMessage());
+
+        } catch (MailAuthenticationException e) {
+            // ✅ SMTP 인증 실패 (앱 비밀번호 오류 가능성)
+            log.error("❌ SMTP 인증 실패: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("이메일 전송 실패: SMTP 인증 실패 (앱 비밀번호 확인 필요)");
+
+        } catch (MailSendException e) {
+            // ✅ SMTP 서버 응답 없음 또는 전송 실패
+            if (e.getMessage().contains("Could not connect to SMTP host")) {
+                log.error("❌ SMTP 서버에 연결할 수 없음: {}", e.getMessage());
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("이메일 전송 실패: 네이버 메일 서버에 연결할 수 없습니다.");
+            }
+            log.error("❌ 이메일 전송 실패 - SMTP 문제: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("이메일 전송 실패: SMTP 전송 실패");
+
+        } catch (MailException e) {
+            // ✅ 기타 Spring Mail 관련 예외 처리
+            log.error("❌ 이메일 전송 중 MailException 발생: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("이메일 전송 실패: 메일 서버 오류");
 
         } catch (Exception e) {
-            log.error("❌ 이메일 전송 중 예외 발생: {}", e.getMessage());
-            return ResponseEntity.internalServerError().body("이메일 전송 실패: 서버 내부 오류 발생");
+            // ✅ 일반적인 예외 처리
+            log.error("❌ 이메일 전송 중 알 수 없는 예외 발생: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("이메일 전송 실패: 서버 내부 오류 발생");
         }
     }
 

@@ -5,8 +5,11 @@ import com.example.HM.Domain.Member.Entity.MemberEntity;
 import com.example.HM.Domain.Member.Repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.mail.SimpleMailMessage;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -30,7 +33,7 @@ public class MemberService {
     private final Map<String, Boolean> verifiedEmails = new HashMap<>();
 
     /**
-     * 🔹 이메일 인증번호 생성 & 전송
+     * 🔹 이메일 인증번호 생성 & 전송 (포트 587 적용)
      */
     public void sendEmailVerificationCode(String email) {
         String code = generateVerificationCode();
@@ -39,15 +42,28 @@ public class MemberService {
         log.info("✅ 인증번호 생성 - 이메일: {} | 인증번호: {}", email, code);
 
         try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(email);
-            message.setSubject("회원가입 인증번호");
-            message.setText("회원가입을 위한 인증번호: " + code + "\n\n📌 인증번호는 5분 동안 유효합니다.");
-            mailSender.send(message);
+            // JavaMailSenderImpl로 SMTP 설정
+            JavaMailSenderImpl mailSenderImpl = (JavaMailSenderImpl) mailSender;
+            mailSenderImpl.setPort(587);
+            mailSenderImpl.getJavaMailProperties().put("mail.smtp.starttls.enable", "true");
+
+            // 이메일 전송
+            MimeMessage message = mailSenderImpl.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
+
+            helper.setFrom("toadsam@naver.com");  // ✅ 반드시 추가!
+            helper.setTo(email);
+            helper.setSubject("회원가입 인증번호");
+            helper.setText("회원가입을 위한 인증번호: " + code + "\n\n📌 인증번호는 5분 동안 유효합니다.");
+
+            mailSenderImpl.send(message);
             log.info("📩 인증번호 이메일 전송 완료 - {}", email);
+        } catch (MessagingException e) {
+            log.error("❌ 이메일 전송 실패 (MessagingException): {}", e.getMessage());
+            throw new RuntimeException("이메일 전송 실패 (MessagingException)", e);
         } catch (Exception e) {
-            log.error("❌ 이메일 전송 실패: {}", e.getMessage());
-            throw new RuntimeException("이메일 전송 실패");
+            log.error("❌ 이메일 전송 실패 (Exception): {}", e.getMessage());
+            throw new RuntimeException("이메일 전송 실패 (Exception)", e);
         }
     }
 
@@ -55,19 +71,16 @@ public class MemberService {
      * 🔹 이메일 인증번호 확인
      */
     public boolean verifyEmailCode(String email, String code) {
-        // 1️⃣ 인증번호가 존재하는지 확인
         if (!emailVerificationCodes.containsKey(email)) {
             return false;
         }
 
-        // 2️⃣ 인증번호 유효시간이 초과되었는지 확인
         if (verificationCodeExpiry.get(email).isBefore(LocalDateTime.now())) {
             emailVerificationCodes.remove(email);
             verificationCodeExpiry.remove(email);
             return false;
         }
 
-        // 3️⃣ 입력한 인증번호가 올바른지 확인
         if (emailVerificationCodes.get(email).equals(code)) {
             verifiedEmails.put(email, true);
             emailVerificationCodes.remove(email);
@@ -84,25 +97,21 @@ public class MemberService {
     public void save(MemberDTO memberDTO) {
         log.info("회원가입 시도: {}", memberDTO.getEmail());
 
-        // 1️⃣ 이메일 인증 여부 확인
         if (!verifiedEmails.getOrDefault(memberDTO.getEmail(), false)) {
             log.warn("이메일 인증되지 않음: {}", memberDTO.getEmail());
             throw new IllegalArgumentException("이메일 인증을 먼저 진행해주세요.");
         }
 
-        // 2️⃣ 이메일 중복 체크
         Optional<MemberEntity> existingUser = memberRepository.findByEmail(memberDTO.getEmail());
         if (existingUser.isPresent()) {
             log.warn("이미 존재하는 이메일: {}", memberDTO.getEmail());
             throw new IllegalArgumentException("이미 존재하는 이메일입니다.");
         }
 
-        // 3️⃣ 비밀번호 암호화 후 저장
         MemberEntity memberEntity = MemberEntity.toMemberEntity(memberDTO);
         memberEntity.setPassword(passwordEncoder.encode(memberDTO.getPassword()));
         memberRepository.save(memberEntity);
 
-        // 4️⃣ 인증 성공한 이메일 정보 제거
         verifiedEmails.remove(memberDTO.getEmail());
         log.info("회원가입 성공: {}", memberDTO.getEmail());
     }
