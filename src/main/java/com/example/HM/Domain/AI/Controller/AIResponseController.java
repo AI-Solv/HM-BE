@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
 @RestController
-@RequestMapping("/AI")
+@RequestMapping("/problems")
 public class AIResponseController {
 
     @Value("${openai.model}")
@@ -23,7 +23,7 @@ public class AIResponseController {
     @Autowired
     private RestTemplate template;
 
-    @GetMapping("/Solving")
+    @GetMapping("/ai-resolve")
     public String chat(@RequestParam(name = "prompt")String prompt){
         AIRequestDto aiRequest = new AIRequestDto(model, prompt);
         AIResponseDto aiResponse =  template.postForObject(apiURL, aiRequest, AIResponseDto.class);

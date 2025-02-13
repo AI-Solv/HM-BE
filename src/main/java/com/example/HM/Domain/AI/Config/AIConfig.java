@@ -13,7 +13,6 @@ public class AIConfig {
     @Value("${openai.api.key}")
     private String openAiKey;
 
-    //Http 클라이언트
     @Bean
     public RestTemplate restTemplate() {
         RestTemplate restTemplate = new RestTemplate();
@@ -24,7 +23,6 @@ public class AIConfig {
         return restTemplate;
     }
 
-    // Http 헤더 설정
     @Bean
     public HttpHeaders httpHeaders() {
         HttpHeaders headers = new HttpHeaders();
