@@ -1,8 +1,10 @@
 package com.example.HM.Domain.Concern.Entity;
 
+import com.example.HM.Domain.Member.Entity.MemberEntity;
 import com.example.HM.Domain.Solution.Entity.Solution;
 import jakarta.persistence.*;
 import lombok.*;
+import org.apache.catalina.User;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -36,6 +38,10 @@ public class Concern {
     @Enumerated(EnumType.STRING)
     private Category category; // 유형
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "userId", nullable = false)
+    private MemberEntity user;
+
     public enum Status {
         PENDING,
         SOLVED,
@@ -43,10 +49,10 @@ public class Concern {
     }
 
     public enum Category {
-        학업("학업"),
-        운동("운동"),
-        취미("취미"),
-        인간관계("인간관계");
+        STUDY("학업"),
+        EXERCISE("운동"),
+        HOBBY("취미"),
+        RELATIONSHIP("인간관계");
 
         private final String displayName;
 

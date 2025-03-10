@@ -2,8 +2,12 @@ package com.example.HM.Domain.Concern.Controller;
 
 import com.example.HM.Domain.AIResponse.Repository.AIResponseRepository;
 import com.example.HM.Domain.AIResponse.Service.AIResponseService;
+import com.example.HM.Domain.Concern.Dto.ConcernStatisticsDto;
 import com.example.HM.Domain.Concern.Dto.CreateConcernRequestDto;
+import com.example.HM.Domain.Concern.Dto.RecentAISolvedConcernDto;
+import com.example.HM.Domain.Concern.Dto.UrgentConcernDto;
 import com.example.HM.Domain.Concern.Entity.Concern;
+import com.example.HM.Domain.Concern.Repository.ConcernRepository;
 import com.example.HM.Domain.Concern.Service.ConcernResolveService;
 import com.example.HM.Domain.Concern.Service.ConcernService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -41,6 +46,27 @@ public class ConcernController {
     @GetMapping("/{id}")
     public Concern getConcernById(@PathVariable Long id) {
         return concernService.getConcernById(id);
+    }
+
+    // 마감일순 정렬 상위 5개 고민 조회
+    @GetMapping("/urgent")
+    public ResponseEntity<List<UrgentConcernDto>> getUrgentConcerns() {
+        List<UrgentConcernDto> concerns = concernService.getUrgentConcerns();
+        return ResponseEntity.ok(concerns);
+    }
+
+    // 최근 AI가 해결한 고민 3개 조회
+    @GetMapping("/ai-solved/recent")
+    public ResponseEntity<List<RecentAISolvedConcernDto>> getRecentAISolvedConcerns() {
+        List<RecentAISolvedConcernDto> concerns = concernService.getRecentAISolvedConcerns();
+        return ResponseEntity.ok(concerns);
+    }
+
+    // 고민 통계 조회
+    @GetMapping("/statistics")
+    public ResponseEntity<ConcernStatisticsDto> getConcernStatistics(@RequestParam Long userId) {
+        ConcernStatisticsDto statistics = concernService.getConcernStatistics(userId);
+        return ResponseEntity.ok(statistics);
     }
 
     // 고민 해결

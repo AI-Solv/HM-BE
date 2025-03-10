@@ -3,6 +3,9 @@ package com.example.HM.Domain.Concern.Service;
 import com.example.HM.Domain.AI.Controller.AIResponseController;
 import com.example.HM.Domain.AIResponse.Entity.AIResponse;
 import com.example.HM.Domain.AIResponse.Repository.AIResponseRepository;
+import com.example.HM.Domain.Concern.Dto.ConcernStatisticsDto;
+import com.example.HM.Domain.Concern.Dto.RecentAISolvedConcernDto;
+import com.example.HM.Domain.Concern.Dto.UrgentConcernDto;
 import com.example.HM.Domain.Concern.Entity.Concern;
 import com.example.HM.Domain.Concern.Repository.ConcernRepository;
 import com.example.HM.Domain.Solution.Entity.Solution;
@@ -15,6 +18,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -76,5 +80,34 @@ public class ConcernService {
             s.setContent(solutionContent);  // Solution의 content 수정
             solutionRepository.save(s);  // 저장
         });
+    }
+
+    // 마감일 정렬 상위 5개 고민 조회
+    public List<UrgentConcernDto> getUrgentConcerns() {
+        List<Concern> concerns = concernRepository.findTop5ByDeadline();
+        return concerns.stream()
+                .map(UrgentConcernDto::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    // 최근 AI가 해결한 고민 3개 조회
+    public List<RecentAISolvedConcernDto> getRecentAISolvedConcerns() {
+        List<Concern> concerns = concernRepository.findTop3ByAiSolved();
+        return concerns.stream()
+                .map(concern -> {
+                    AIResponse aiResponse = aiResponseRepository.findByConcernId(concern.getId()).orElse(null);
+                    return RecentAISolvedConcernDto.fromEntity(concern, aiResponse);
+                })
+                .collect(Collectors.toList());
+    }
+
+    // 고민 목록 상태 조회
+    public ConcernStatisticsDto getConcernStatistics(Long userId) {
+        long total = concernRepository.countTotalConcerns(userId);
+        long solvedBefore = concernRepository.countSolvedBeforeDeadline(userId);
+        long solvedAfter = concernRepository.countSolvedAfterDeadline(userId);
+        String category = concernRepository.findMostFrequentCategory(userId);
+
+        return ConcernStatisticsDto.fromValues(total, solvedBefore, solvedAfter, category);
     }
 }
